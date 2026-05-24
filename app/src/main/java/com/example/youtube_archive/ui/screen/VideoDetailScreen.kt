@@ -1,4 +1,4 @@
-package com.example.youtube_archive.ui
+package com.example.youtube_archive.ui.screen
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer

@@ -1,17 +1,14 @@
 plugins {
     alias(libs.plugins.android.application)
-
+    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.kotlin.serialization) // 👈 새롭게 추가된 줄!
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
 }
-
 android {
     namespace = "com.example.youtube_archive"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 36
+
 
     defaultConfig {
         applicationId = "com.example.youtube_archive"
@@ -36,6 +33,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    kotlinOptions {
+        jvmTarget = "11"
+    }
     buildFeatures {
         compose = true
     }
@@ -52,6 +52,13 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.navigation.compose)
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+
+    // 👇 2주차: Room 데이터베이스 라이브러리 추가
+
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    implementation(libs.coil.compose)
+    ksp(libs.room.compiler)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

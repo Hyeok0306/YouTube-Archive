@@ -1,7 +1,8 @@
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
+// 프로젝트 수준 build.gradle.kts
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.compose) apply false
-    // 이곳에 추가했던 id("org.jetbrains.kotlin.plugin.serialization")는 지워주세요!
+    alias(libs.plugins.kotlin.serialization) apply false
+    alias(libs.plugins.ksp) apply false // KSP도 여기서 관리
 }
