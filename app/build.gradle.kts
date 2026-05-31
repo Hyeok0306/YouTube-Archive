@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.secrets)
 }
 android {
     namespace = "com.example.youtube_archive"
@@ -39,6 +40,10 @@ android {
     buildFeatures {
         compose = true
     }
+    buildFeatures {
+        compose = true
+        buildConfig = true // 💡 이 줄을 꼭 추가해야 코틀린에서 꺼내 쓸 수 있습니다!
+    }
 }
 
 dependencies {
@@ -52,9 +57,6 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.navigation.compose)
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
-
-    // 👇 2주차: Room 데이터베이스 라이브러리 추가
-
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     implementation(libs.coil.compose)
@@ -66,4 +68,7 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp.logging)
 }

@@ -15,7 +15,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -98,20 +97,9 @@ fun YouTubeArchiveApp(viewModel: ArchiveViewModel) {
                 )
             }
             composable<Search> {
-                // 1. 검색어를 임시로 저장할 상태 변수 만들기
-                var searchQuery by remember { mutableStateOf("") }
-
-                // 2. SearchScreen에 필요한 파라미터 전달하기
-                SearchScreen(
-                    searchQuery = searchQuery,
-                    onQueryChange = { newQuery ->
-                        searchQuery = newQuery // 사용자가 글자를 입력할 때마다 상태 업데이트
-                    },
-                    onSearchClick = {
-                        // 검색 버튼을 눌렀을 때 실행될 로직 (나중에 API 연동 시 사용)
-                        println("검색 테스트: $searchQuery")
-                    }
-                )
+                // SearchScreen internally manages its state and ViewModel, 
+                // so we don't need to pass searchQuery or callbacks here anymore.
+                SearchScreen()
             }
             composable<VideoDetail> { backStackEntry ->
                 val detail: VideoDetail = backStackEntry.toRoute()

@@ -22,14 +22,14 @@ class ArchiveViewModel(private val repository: VideoRepository) : ViewModel() {
     // 영상 추가 함수
     fun addVideo(video: VideoEntity) {
         viewModelScope.launch {
-            repository.insert(video)
+            repository.insertVideo(video)
         }
     }
 
     // 영상 삭제 함수
     fun deleteVideo(video: VideoEntity) {
         viewModelScope.launch {
-            repository.delete(video)
+            repository.deleteVideo(video)
         }
     }
 
@@ -42,7 +42,7 @@ class ArchiveViewModel(private val repository: VideoRepository) : ViewModel() {
                 title = "테스트 영상: Room DB 연동 확인",
                 thumbnailUrl = "https://img.youtube.com/vi/dQw4w9WgXcQ/0.jpg"
             )
-            repository.insert(testVideo)
+            repository.insertVideo(testVideo)
         }
     }
 }
