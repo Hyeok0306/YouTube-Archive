@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 data class VideoEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,             // 고유 ID (Room이 자동으로 생성)
-    val videoUrl: String,        // 유튜브 주소
+    val videoId: String,         // 유튜브 영상 ID
     val title: String,           // 영상 제목
-    val thumbnailUrl: String     // 썸네일 이미지 주소
+    val thumbnailUri: String     // 썸네일 이미지 주소
 )

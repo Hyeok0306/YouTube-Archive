@@ -3,110 +3,38 @@ package com.example.youtube_archive
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.toRoute
-import androidx.room.Room
+import androidx.lifecycle.ViewModelProvider
 import com.example.youtube_archive.data.local.AppDatabase
 import com.example.youtube_archive.data.local.VideoRepository
-import com.example.youtube_archive.ui.screen.ArchiveListScreen
-import com.example.youtube_archive.ui.screen.SearchScreen
-import com.example.youtube_archive.ui.screen.VideoDetailScreen
-import com.example.youtube_archive.ui.viewmodel.ArchiveViewModel
-import com.example.youtube_archive.ui.viewmodel.ArchiveViewModelFactory
-import kotlinx.serialization.Serializable
-
-@Serializable object ArchiveList
-@Serializable object Search
-@Serializable data class VideoDetail(val videoId: String)
+import com.example.youtube_archive.ui.YouTubeArchiveApp
+import com.example.youtube_archive.ui.theme.YouTubeArchiveTheme
+import com.example.youtube_archive.ui.viewmodel.MainViewModel
+import com.example.youtube_archive.ui.viewmodel.MainViewModelFactory
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-
         super.onCreate(savedInstanceState)
 
-        // 1. Room 데이터베이스 생성
-        val db = Room.databaseBuilder(
-            applicationContext,
-            AppDatabase::class.java, "video_db"
-        ).build()
+        // 1. 로컬 DB 및 레포지토리 초기화
+        val database = AppDatabase.getDatabase(applicationContext)
+        val repository = VideoRepository(database.videoDao())
 
-        // 2. Repository 및 Factory 준비
-        val repository = VideoRepository(db.videoDao())
-        val viewModelFactory = ArchiveViewModelFactory(repository)
+        // 2. 뷰모델 팩토리 생성 (MainViewModelFactory 사용)
+        val viewModelFactory = MainViewModelFactory(repository)
+
+        // 3. 뷰모델 생성 (MainViewModel 사용)
+        val mainViewModel = ViewModelProvider(this, viewModelFactory)[MainViewModel::class.java]
 
         setContent {
-            // 3. ViewModel 주입
-            val archiveViewModel: ArchiveViewModel = viewModel(factory = viewModelFactory)
-
-            YouTubeArchiveApp(archiveViewModel)
-        }
-    }
-}
-
-@Composable
-fun YouTubeArchiveApp(viewModel: ArchiveViewModel) {
-    val navController = rememberNavController()
-    var selectedTab by remember { mutableIntStateOf(0) }
-
-    Scaffold(
-        bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0; navController.navigate(ArchiveList) },
-                    icon = { Icon(Icons.Default.Home, null) },
-                    label = { Text("아카이브") }
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1; navController.navigate(Search) },
-                    icon = { Icon(Icons.Default.Search, null) },
-                    label = { Text("추가") }
-                )
-            }
-        }
-    ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = ArchiveList,
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            composable<ArchiveList> {
-                // ViewModel을 전달하여 실제 DB 데이터를 보여줌
-                ArchiveListScreen(
-                    viewModel = viewModel,
-                    onVideoClick = { url -> navController.navigate(VideoDetail(url)) }
-                )
-            }
-            composable<Search> {
-                // SearchScreen internally manages its state and ViewModel, 
-                // so we don't need to pass searchQuery or callbacks here anymore.
-                SearchScreen()
-            }
-            composable<VideoDetail> { backStackEntry ->
-                val detail: VideoDetail = backStackEntry.toRoute()
-                VideoDetailScreen(
-                    videoId = detail.videoId,
-                    onBackClick = { navController.popBackStack() }
-                )
+            YouTubeArchiveTheme {
+                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                    // 4. MainViewModel을 YouTubeArchiveApp으로 전달
+                    YouTubeArchiveApp(viewModel = mainViewModel)
+                }
             }
         }
     }

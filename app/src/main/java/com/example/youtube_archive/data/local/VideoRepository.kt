@@ -3,46 +3,86 @@ package com.example.youtube_archive.data.local
 import com.example.youtube_archive.BuildConfig
 import com.example.youtube_archive.data.remote.RetrofitClient
 import com.example.youtube_archive.data.remote.YouTubeSearchItem
-import kotlinx.coroutines.Dispatchers
+import com.example.youtube_archive.model.GoogleUser
+import com.example.youtube_archive.model.Video
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 
-// 기존에 작성하셨던 코드가 대략 이런 형태일 것입니다.
-class VideoRepository(private val videoDao: VideoDao) {
-
-    // ==========================================
-    // 1. Local DB (Room) 기능 - 2주차에 작성한 코드
-    // ==========================================
-    val allVideos: Flow<List<VideoEntity>> = videoDao.getAllVideos()
-
-    suspend fun insertVideo(video: VideoEntity) {
-        videoDao.insertVideo(video)
-    }
-
-    suspend fun deleteVideo(video: VideoEntity) {
-        videoDao.deleteVideo(video)
-    }
-
-    // ==========================================
-    // 2. Remote API (YouTube 검색) 기능 - ⭐ 3주차 추가 코드
-    // ==========================================
-    private val apiService = RetrofitClient.apiService
-
-    suspend fun searchYouTubeVideos(query: String): List<YouTubeSearchItem> {
-        return withContext(Dispatchers.IO) {
-            try {
-                // BuildConfig에서 가짜(또는 진짜) API 키 불러오기
-                val apiKey = BuildConfig.YOUTUBE_API_KEY
-
-                val response = apiService.searchVideos(
-                    query = query,
-                    apiKey = apiKey
-                )
-                response.items
-            } catch (e: Exception) {
-                e.printStackTrace()
-                emptyList() // 에러 시 빈 리스트 반환
-            }
+class VideoRepository(
+    private val videoDao: VideoDao
+) {
+    // [진짜 기능] 1. 기기 내부 Room DB에서 데이터 실시간 관찰 (Flow 매핑)
+    val allVideos: Flow<List<Video>> = videoDao.getAllVideos().map { entityList ->
+        entityList.map { entity ->
+            Video(
+                id = entity.id,
+                videoId = entity.videoId,
+                title = entity.title,
+                thumbnailUri = entity.thumbnailUri,
+                isSyncedWithDrive = false // 기본값은 로컬 전용
+            )
         }
+    }
+
+    // [진짜 기능] 2. 기기 내부 Room DB에 영상 저장
+    suspend fun insertVideo(video: Video) {
+        val entity = VideoEntity(
+            videoId = video.videoId,
+            title = video.title,
+            thumbnailUri = video.thumbnailUri
+        )
+        videoDao.insertVideo(entity)
+    }
+
+    // [진짜 기능] 3. 영상 삭제
+    suspend fun deleteVideo(video: Video) {
+        val entity = VideoEntity(
+            id = video.id,
+            videoId = video.videoId,
+            title = video.title,
+            thumbnailUri = video.thumbnailUri
+        )
+        videoDao.deleteVideo(entity)
+    }
+
+    // [진짜 기능] 4. 정규식 기반 유튜브 ID 파싱 로직
+    fun extractVideoId(url: String): String? {
+        val regex = "^(?:https?:\\/\\/)?(?:www\\.)?(?:youtube\\.com\\/(?:[^\\/\\n\\s]+\\/\\S+\\/|(?:v|e(?:mbed)?)\\/|\\S*?[?&]v=)|youtu\\.be\\/)([a-zA-Z0-9_-]{11})".toRegex()
+        return regex.find(url)?.groupValues?.get(1)
+    }
+
+    // [진짜 기능] 5. 유튜브 API 검색 (Retrofit 사용)
+    suspend fun searchYouTubeVideos(query: String): List<YouTubeSearchItem> {
+        return try {
+            val response = RetrofitClient.apiService.searchVideos(
+                query = query,
+                apiKey = BuildConfig.YOUTUBE_API_KEY
+            )
+            response.items
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
+    }
+
+    // [가상 가상] 6. 구글 로그인 시뮬레이션
+    suspend fun signInWithGoogle(): GoogleUser {
+        delay(1200)
+        return GoogleUser(
+            name = "이성혁",
+            email = "Hyeok0306@gmail.com",
+            profilePictureUrl = "https://www.gstatic.com/images/branding/product/2x/avatar_anonymous_96x96dp.png"
+        )
+    }
+
+    // [가상 가상] 7. 구글 드라이브 백업 시뮬레이션
+    suspend fun syncDatabaseWithGoogleDrive(videos: List<Video>): Flow<String> = flow {
+        emit("구글 드라이브 클라우드 인프라 접근 중...")
+        delay(1000)
+        emit("SQLite 데이터베이스 파일 파일 스트림 복사 중...")
+        delay(1200)
+        emit("구글 드라이브 'YouTube-Archive-Backup/' 경로 업로드 완료!")
     }
 }

@@ -17,11 +17,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.example.youtube_archive.data.local.VideoEntity
+import com.example.youtube_archive.model.Video
 
 @Composable
 fun ArchiveItemCard(
-    video: VideoEntity,
+    video: Video,
     onClick: () -> Unit
 ) {
     Card(
@@ -36,7 +36,7 @@ fun ArchiveItemCard(
         ) {
             // 실제 유튜브 썸네일을 불러오는 부분
             AsyncImage(
-                model = video.thumbnailUrl,
+                model = video.thumbnailUri,
                 contentDescription = "영상 썸네일",
                 modifier = Modifier.size(60.dp)
             )

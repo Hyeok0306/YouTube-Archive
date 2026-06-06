@@ -14,16 +14,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.youtube_archive.data.local.AppDatabase
+import com.example.youtube_archive.data.local.VideoRepository
 import com.example.youtube_archive.ui.components.ArchiveItemCard
 import com.example.youtube_archive.ui.viewmodel.ArchiveViewModel
+import com.example.youtube_archive.ui.viewmodel.ArchiveViewModelFactory
 
 @Composable
 fun ArchiveListScreen(
-    // viewModel() 함수를 사용해 ViewModel을 주입받습니다.
-    viewModel: ArchiveViewModel = viewModel(),
-    onVideoClick: (String) -> Unit
+    onVideoClick: (String) -> Unit,
+    // ViewModelFactory를 사용하여 ViewModel을 올바르게 초기화합니다.
+    viewModel: ArchiveViewModel = viewModel(
+        factory = ArchiveViewModelFactory(
+            VideoRepository(
+                AppDatabase.getDatabase(LocalContext.current.applicationContext).videoDao()
+            )
+        )
+    )
 ) {
     // ViewModel의 StateFlow를 Compose의 State로 변환하여 관찰합니다.
     val videoList by viewModel.allVideos.collectAsState(initial = emptyList())
@@ -50,10 +60,10 @@ fun ArchiveListScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // key를 추가하여 성능 최적화
-            items(items = videoList, key = { it.id }) { video ->
+            items(items = videoList, key = { it.videoId }) { video ->
                 ArchiveItemCard(
                     video = video,
-                    onClick = { onVideoClick(video.videoUrl) }
+                    onClick = { onVideoClick(video.videoId) }
                 )
             }
         }
