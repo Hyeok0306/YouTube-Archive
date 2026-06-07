@@ -2,9 +2,11 @@ package com.example.youtube_archive.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chaquo.python.Python
 import com.example.youtube_archive.data.local.VideoRepository
 import com.example.youtube_archive.model.GoogleUser
 import com.example.youtube_archive.model.Video
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -15,6 +17,24 @@ import kotlinx.coroutines.launch
 
 // 💡 팩토리나 주입을 통해 Repository를 전달받는 구조에 맞게 수정
 class MainViewModel(private val repository: VideoRepository) : ViewModel() {
+
+    init {
+        // 앱 시작 시, ViewModel이 생성되면서 자동 체크
+        checkAndInitializeDownloader()
+    }
+
+    private fun checkAndInitializeDownloader() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val py = Python.getInstance()
+                val module = py.getModule("downloader")
+                // 파이썬 엔진 내 업데이트 함수 호출
+                module.callAttr("update_yt_dlp")
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
 
     private val _userState = MutableStateFlow<GoogleUser?>(null)
     val userState: StateFlow<GoogleUser?> = _userState.asStateFlow()
@@ -59,7 +79,7 @@ class MainViewModel(private val repository: VideoRepository) : ViewModel() {
             _searchResult.value = Video(
                 videoId = extractedId,
                 title = "아카이빙된 영상 ($extractedId)",
-                thumbnailUri = thumbnailUrl
+                thumbnailUrl = thumbnailUrl
             )
         } else {
             _searchResult.value = null

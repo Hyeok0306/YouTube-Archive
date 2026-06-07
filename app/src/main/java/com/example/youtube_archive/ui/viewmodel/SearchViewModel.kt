@@ -1,15 +1,24 @@
 package com.example.youtube_archive.ui.viewmodel
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.youtube_archive.data.local.AppDatabase
 import com.example.youtube_archive.data.local.VideoRepository
 import com.example.youtube_archive.data.remote.YouTubeSearchItem
+import com.example.youtube_archive.model.Video
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.json.JSONObject
 
 class SearchViewModel(application: Application) : AndroidViewModel(application) {
     private val database = AppDatabase.getDatabase(application)
@@ -21,39 +30,69 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    // 💡 추가된 부분: 현재 검색 모드 (0: 키워드 검색, 1: URL 입력)
+    // ⭕ 결과 메시지 전달용 SharedFlow
+    private val _uiEvent = MutableSharedFlow<String>()
+    val uiEvent = _uiEvent.asSharedFlow()
+
     private val _searchMode = MutableStateFlow(0)
     val searchMode: StateFlow<Int> = _searchMode.asStateFlow()
 
     fun setSearchMode(mode: Int) {
         _searchMode.value = mode
-        _searchResults.value = emptyList() // 탭을 바꿀 때 기존 검색 결과 초기화
+        _searchResults.value = emptyList()
     }
 
     fun searchVideos(query: String) {
         if (query.isBlank()) return
-
         viewModelScope.launch {
             _isLoading.value = true
-
-            // URL 모드일 경우 주소에서 ID만 추출, 키워드 모드일 경우 그대로 사용
-            val finalQuery = if (_searchMode.value == 1) {
-                extractVideoIdFromUrl(query) ?: query // 추출 실패 시 원본 문자열로 검색 시도
-            } else {
-                query
-            }
-
+            val finalQuery = if (_searchMode.value == 1) extractVideoId(query) ?: query else query
             val results = repository.searchYouTubeVideos(finalQuery)
-            _searchResults.value = results
+            _searchResults.value = results.distinctBy { it.id.videoId }
             _isLoading.value = false
         }
     }
 
-    // 💡 유튜브 URL에서 영상 고유 ID만 추출하는 정규식 함수
-    private fun extractVideoIdFromUrl(url: String): String? {
-        // youtu.be/xxx 형식이나 youtube.com/watch?v=xxx 형식 모두 처리
-        val regex = "(?<=v=|v\\/|vi=|vi\\/|youtu.be\\/|\\/v\\/|\\/e\\/|watch\\?v=|&v=)([^#\\&\\?]*).*".toRegex()
-        val matchResult = regex.find(url)
-        return matchResult?.groups?.get(1)?.value
+    fun addVideoFromUrl(url: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                // ⭕ 네트워크 통신은 IO 스레드에서 수행
+                val result = withContext(Dispatchers.IO) {
+                    val client = OkHttpClient()
+                    val oEmbedUrl = "https://www.youtube.com/oembed?url=$url&format=json"
+                    val request = Request.Builder().url(oEmbedUrl).build()
+                    val response = client.newCall(request).execute()
+
+                    if (!response.isSuccessful) return@withContext null
+
+                    val responseBody = response.body?.string() ?: return@withContext null
+                    val json = JSONObject(responseBody)
+
+                    val title = json.getString("title")
+                    val thumbnailUrl = json.getString("thumbnail_url")
+                    val videoId = extractVideoId(url) ?: return@withContext null
+
+                    Video(videoId = videoId, title = title, thumbnailUrl = thumbnailUrl)
+                }
+
+                if (result != null) {
+                    repository.insertVideo(result)
+                    _uiEvent.emit("영상 추가 성공: ${result.title}") // ⭕ 성공 이벤트
+                } else {
+                    _uiEvent.emit("추가 실패: 잘못된 URL이거나 정보를 찾을 수 없습니다.")
+                }
+            } catch (e: Exception) {
+                _uiEvent.emit("네트워크 오류 발생")
+                Log.e("SearchViewModel", "Error: ${e.message}")
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    private fun extractVideoId(url: String): String? {
+        val regex = "(?<=watch\\?v=|/videos/|embed\\/|youtu.be\\/)([a-zA-Z0-9_-]{11})".toRegex()
+        return regex.find(url)?.value
     }
 }

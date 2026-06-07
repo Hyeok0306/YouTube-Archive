@@ -1,15 +1,13 @@
+package com.example.youtube_archive.data.local
+
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-// data/local/entity/VideoEntity.kt
-
-@Entity(tableName = "video_table")
+@Entity(tableName = "videos")
 data class VideoEntity(
-    @PrimaryKey(autoGenerate = true) // 1. 자동으로 1, 2, 3... 증가하는 번호 생성
-    val id: Long = 0,               // 2. 이게 진짜 기본 키가 됩니다.
-
-    val videoId: String,            // 3. 이제 중복이 허용됩니다.
-    val title: String,
-    val thumbnailUrl: String,
-    // ... 나머지 필드들
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0,         // Room DB용 고유 자동 증가 키
+    val videoId: String,      // 유튜브 영상 ID
+    val title: String,        // 영상 제목
+    val thumbnailUrl: String  // 썸네일 URL (통일된 명칭)
 )

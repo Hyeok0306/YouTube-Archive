@@ -6,4 +6,5 @@ plugins {
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.ksp) apply false // KSP도 여기서 관리
     alias(libs.plugins.secrets) apply false
+    id("com.chaquo.python") version "17.0.0" apply false
 }

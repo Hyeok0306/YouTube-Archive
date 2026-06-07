@@ -20,7 +20,7 @@ class VideoRepository(
                 id = entity.id,
                 videoId = entity.videoId,
                 title = entity.title,
-                thumbnailUri = entity.thumbnailUri,
+                thumbnailUrl = entity.thumbnailUrl,
                 isSyncedWithDrive = false // 기본값은 로컬 전용
             )
         }
@@ -31,7 +31,7 @@ class VideoRepository(
         val entity = VideoEntity(
             videoId = video.videoId,
             title = video.title,
-            thumbnailUri = video.thumbnailUri
+            thumbnailUrl = video.thumbnailUrl
         )
         videoDao.insertVideo(entity)
     }
@@ -42,7 +42,7 @@ class VideoRepository(
             id = video.id,
             videoId = video.videoId,
             title = video.title,
-            thumbnailUri = video.thumbnailUri
+            thumbnailUrl = video.thumbnailUrl
         )
         videoDao.deleteVideo(entity)
     }
@@ -84,5 +84,16 @@ class VideoRepository(
         emit("SQLite 데이터베이스 파일 파일 스트림 복사 중...")
         delay(1200)
         emit("구글 드라이브 'YouTube-Archive-Backup/' 경로 업로드 완료!")
+    }
+
+    suspend fun isVideoSaved(videoId: String): Boolean {
+        // 개수가 0보다 크면 이미 저장되어 있는 것(true), 0이면 없는 것(false)
+        return videoDao.isVideoSaved(videoId) > 0
+    }
+
+    // VideoRepository.kt 내부에 추가
+    suspend fun deleteVideoById(videoId: String): Boolean {
+        // 삭제된 행의 개수가 0보다 크면 성공(true), 아니면 실패(false)
+        return videoDao.deleteVideoById(videoId) > 0
     }
 }

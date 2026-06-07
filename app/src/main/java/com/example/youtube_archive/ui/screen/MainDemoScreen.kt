@@ -22,7 +22,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+// ⭕ 아래 import 문으로 교체하세요
+import coil3.compose.AsyncImage
 import com.example.youtube_archive.ui.viewmodel.MainViewModel
 
 @Composable
@@ -46,7 +47,7 @@ fun MainDemoScreen(viewModel: MainViewModel) {
 
         searchResult?.let { video ->
             Text("추출된 ID: ${video.videoId}", style = MaterialTheme.typography.bodySmall)
-            AsyncImage(model = video.thumbnailUri, contentDescription = null, modifier = Modifier.height(100.dp))
+            AsyncImage(model = video.thumbnailUrl, contentDescription = null, modifier = Modifier.height(100.dp))
             Button(onClick = { viewModel.saveToArchive() }) { Text("내부 저장소에 저장") }
         }
 

@@ -9,15 +9,19 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface VideoDao {
-    // 저장된 모든 영상 불러오기 (최신순)
     @Query("SELECT * FROM videos ORDER BY id DESC")
     fun getAllVideos(): Flow<List<VideoEntity>>
 
-    // 영상 저장
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertVideo(video: VideoEntity)
 
-    // 영상 삭제
     @Delete
     suspend fun deleteVideo(video: VideoEntity)
+    // VideoDao.kt 에 추가할 쿼리문
+    @Query("SELECT COUNT(*) FROM videos WHERE videoId = :videoId")
+    suspend fun isVideoSaved(videoId: String): Int
+
+    // VideoDao.kt 내부에 추가
+    @Query("DELETE FROM videos WHERE videoId = :videoId")
+    suspend fun deleteVideoById(videoId: String): Int
 }

@@ -48,23 +48,45 @@ fun YouTubeArchiveApp(viewModel: MainViewModel) {
                     icon = {},
                     label = { Text("추가", style = if(selectedTab==1) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium) }
                 )
-                NavigationBarItem(
-                    selected = selectedTab == 2,
-                    onClick = { selectedTab = 2; navController.navigate(DriveDemo) },
-                    icon = {},
-                    label = { Text("클라우드", style = if(selectedTab==2) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium) }
-                )
+//                NavigationBarItem(
+//                    selected = selectedTab == 2,
+//                    onClick = { selectedTab = 2; navController.navigate(DriveDemo) },
+//                    icon = {},
+//                    label = { Text("클라우드", style = if(selectedTab==2) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium) }
+//                )
             }
         }
     ) { innerPadding ->
-        NavHost(navController = navController, startDestination = ArchiveList, modifier = Modifier.padding(innerPadding)) {
-            composable<ArchiveList> { ArchiveListScreen(onVideoClick = { videoId -> navController.navigate(VideoDetail(videoId)) }) }
-            composable<Search> { SearchScreen() }
+        NavHost(
+            navController = navController,
+            startDestination = ArchiveList,
+            modifier = Modifier.padding(innerPadding)
+        ) {
+            composable<ArchiveList> {
+                ArchiveListScreen(onVideoClick = { videoId -> navController.navigate(VideoDetail(videoId)) })
+            }
+
+            // ⭕ [원인 해결 부분] SearchScreen에 클릭 이벤트를 연결하여 상세 정보 화면으로 내비게이션 이동 트리거
+            composable<Search> {
+                SearchScreen(
+                    onVideoClick = { clickedVideoId ->
+                        // 검색 결과 카드를 터치하면 해당 영상의 ID를 실어서 VideoDetail 화면으로 이동시킵니다.
+                        navController.navigate(VideoDetail(clickedVideoId))
+                    }
+                )
+            }
+
             composable<VideoDetail> { backStackEntry ->
                 val detail: VideoDetail = backStackEntry.toRoute()
-                VideoDetailScreen(videoId = detail.videoId, onBackClick = { navController.popBackStack() })
+                VideoDetailScreen(
+                    videoInput = detail.videoId,
+                    onBackClick = { navController.popBackStack() }
+                )
             }
-            composable<DriveDemo> { MainDemoScreen(viewModel = viewModel) }
+
+            composable<DriveDemo> {
+                MainDemoScreen(viewModel = viewModel)
+            }
         }
     }
 }
